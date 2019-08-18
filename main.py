@@ -15,16 +15,29 @@ from wtforms.validators import DataRequired
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
 
+from flask_mail import Mail
+from flask_mail import Message
+
+from threading import Thread
+
 basedir = os.path.abspath(os.path.dirname(__file__))
 app = Flask(__name__)
 app.config['SECRET_KEY']='0101010101010101'
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///'+os.path.join(basedir,'data.sqlite')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
+app.config['MAIL_SERVER'] = 'localhost'
+app.config['MAIL_PORT'] = 25
+app.config['FLASKY_MAIL_SUBJECT_PREFIX'] = '[Flasky]'
+app.config['FLASKY_MAIL_SENDER'] = 'Flasky Admin <flasky@example.com>'
+app.config['FLASKY_ADMIN'] = os.environ.get('FLASKY_ADMIN')
+
 booststrap = Bootstrap(app)
 moment = Moment(app)
 db = SQLAlchemy(app)
 migrate = Migrate(app, db)
+
+mail = Mail(app)
 
 class NameForm(FlaskForm):
     name = StringField("What's your name?",validators=[DataRequired()])
@@ -40,6 +53,9 @@ def index():
             db.session.add(user)
             db.session.commit()
             session['known' ] = False
+            if app.config['FLASKY_ADMIN']:
+                send_email(app.config['FLASKY_ADMIN'], 'New User',
+                'mail/new_user', user=user)
         else:
             session['known'] = True
         session['name'] = form.name.data
@@ -88,3 +104,17 @@ class User(db.Model):
 #@app.shell_context_processor
 def make_shell_context():
     return dict(db = db , User=User, Role=Role)
+
+def send_email(to, subject, template, **kwargs):
+    msg = Message(app.config['FLASKY_MAIL_SUBJECT_PREFIX']+subject,
+                sender = app.config['FLASKY_MAIL_SENDER'],
+                recipients=[to])
+    msg.body = render_template(template+'.txt',**kwargs)
+    msg.html = render_template(template+'.html',**kwargs)
+    thr.Thread(target=send_async_email, args=[app,msg])
+    thr.start()
+    return thr
+
+def send_async_email(app, msg):
+    with app.app_context():
+        mail.send(msg)
