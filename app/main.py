@@ -1,26 +1,16 @@
-import os
-from flask import Flask
 from flask import session, redirect, url_for, flash
 
-from flask import render_template
-from flask_bootstrap import Bootstrap
 
-from flask_moment import Moment
-from datetime import datetime
 
 from flask_wtf import FlaskForm
 from wtforms import StringField,SubmitField
 from wtforms.validators import DataRequired
 
-from flask_sqlalchemy import SQLAlchemy
-from flask_migrate import Migrate
 
-from flask_mail import Mail
 from flask_mail import Message
 
 from threading import Thread
 
-basedir = os.path.abspath(os.path.dirname(__file__))
 app = Flask(__name__)
 app.config['SECRET_KEY']='0101010101010101'
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///'+os.path.join(basedir,'data.sqlite')
@@ -32,12 +22,8 @@ app.config['FLASKY_MAIL_SUBJECT_PREFIX'] = '[Flasky]'
 app.config['FLASKY_MAIL_SENDER'] = 'Flasky Admin <flasky@example.com>'
 app.config['FLASKY_ADMIN'] = os.environ.get('FLASKY_ADMIN')
 
-booststrap = Bootstrap(app)
-moment = Moment(app)
-db = SQLAlchemy(app)
 migrate = Migrate(app, db)
 
-mail = Mail(app)
 
 class NameForm(FlaskForm):
     name = StringField("What's your name?",validators=[DataRequired()])
