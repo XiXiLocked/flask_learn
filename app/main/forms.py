@@ -1,12 +1,8 @@
-import os
-from app import create_app, db
-from app.models import User, Role
-from flask_migrate import Migrate
-
-app = create_app(os.genenv('FLASK_CONFIG')or 'default')
-migrate = Migrate(app,db)
+from flask_wtf import FlaskForm
+from wtforms import StringField, SubmitField
+from wtforms.validators import DataRequired
 
 
-@app.shell_context_processor
-def make_shell_context():
-    return dict(db = db , User=User, Role=Role)
+class NameForm(FlaskForm):
+    name = StringField('What is your name?', validators=[DataRequired()])
+    submit = SubmitField('Submit')
